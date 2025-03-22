@@ -214,7 +214,7 @@ function Content() {
         await response.json();
       }
     } catch (error) {
-      // console.log(error.message);
+      console.log(error.message);
     }
   };
 

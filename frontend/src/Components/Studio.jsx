@@ -17,6 +17,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Zoom from "@mui/material/Zoom";
 import ArrowDropDownRoundedIcon from "@mui/icons-material/ArrowDropDownRounded";
 import VideoCallOutlinedIcon from "@mui/icons-material/VideoCallOutlined";
+import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import Dashboard from "./Studio/Dashboard";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -64,6 +65,7 @@ function Studio() {
   const [isVisibilityClicked, setisVisibilityClicked] = useState(false);
   const [myVideos, setMyVideos] = useState([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [category, setCategory] = useState("");
   const [theme, setTheme] = useState(() => {
     const Dark = localStorage.getItem("Dark");
     return Dark ? JSON.parse(Dark) : true;
@@ -560,6 +562,7 @@ function Studio() {
           video_duration: duration,
           publishDate: currentDate,
           Visibility: visibility,
+          category: category
         };
         // Send the POST request
         const response = await fetch(`${backendURL}/publish`, {
@@ -1060,6 +1063,22 @@ function Studio() {
                     placeholder="Tags"
                     onChange={(e) => setVideoTags(e.target.value)}
                   />
+
+                    <FormControl  fullWidth>
+                        <InputLabel>Category</InputLabel>
+                        <Select className="video-category" value={category} onChange={(e) => setCategory(e.target.value)}>
+                        <MenuItem value="Music">Music</MenuItem>
+                        <MenuItem value="Gaming">Gaming</MenuItem>
+                        <MenuItem value="Entertainment">Entertainment</MenuItem>
+                        <MenuItem value="Education">Education</MenuItem>
+                        <MenuItem value="Technology">Technology</MenuItem>
+                        <MenuItem value="Vlogs">Vlogs</MenuItem>
+                        <MenuItem value="Food">Food</MenuItem>
+                        <MenuItem value="Fitness & Health">Fitness & Health</MenuItem>
+                        <MenuItem value="Science & Facts">Science & Facts</MenuItem>
+                        <MenuItem value="News & Politics">News & Politics</MenuItem>
+                        </Select>
+                    </FormControl>
                 </div>
               </form>
               <div

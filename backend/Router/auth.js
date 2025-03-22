@@ -205,7 +205,7 @@ auth.post("/resetlink", async (req, res) => {
     });
 
     const mailOptions = {
-      from: "admin@shubho.youtube.app",
+      from: "admin@copyright.in",
       to: email,
       subject: "Password Reset Link",
       html: `
@@ -226,9 +226,9 @@ auth.post("/resetlink", async (req, res) => {
     // Send the email
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error(error);
+        console.error("Error sending email:", error);
         return res.status(400).json({
-          message: "Error sending email",
+          message: `Error sending email: ${error.message}`,
         });
       } else {
         console.log("Email sent: " + info.response);

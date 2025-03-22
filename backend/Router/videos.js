@@ -22,6 +22,7 @@ Videos.post("/publish", async (req, res) => {
       email,
       publishDate,
       Visibility,
+      category
     } = req.body;
 
     const refreshToken = req.cookies?.refreshToken;
@@ -67,6 +68,7 @@ Videos.post("/publish", async (req, res) => {
               videoLength: video_duration,
               uploaded_date: publishDate,
               visibility: Visibility,
+              videoCategory: category
             },
           ],
         });
@@ -82,6 +84,7 @@ Videos.post("/publish", async (req, res) => {
           videoLength: video_duration,
           uploaded_date: publishDate,
           visibility: Visibility,
+          videoCategory: category
         });
       }
 
