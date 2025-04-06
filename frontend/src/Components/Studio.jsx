@@ -66,6 +66,9 @@ function Studio() {
   const [myVideos, setMyVideos] = useState([]);
   const [isPublished, setIsPublished] = useState(false);
   const [category, setCategory] = useState("");
+  const [videoId, setVideoId] = useState(null);
+  const [show, setShow] = useState(false);
+
   const [theme, setTheme] = useState(() => {
     const Dark = localStorage.getItem("Dark");
     return Dark ? JSON.parse(Dark) : true;
@@ -125,6 +128,75 @@ function Studio() {
   //USE EFFECTS
 
   useEffect(() => {
+    if (sessionStorage.getItem("showToast") === "true") {
+      const message = sessionStorage.getItem("toastMessage");
+      const type = sessionStorage.getItem("toastType");
+  
+      if (message && type) {
+        if (type === "error") {
+          toast.error(message, { position: "top-center", style: { marginTop: "50px" } });
+        } else {
+          toast.success(message, { position: "top-center", style: { marginTop: "50px" } });
+        }
+      }
+  
+      // Remove the stored values after displaying the toast
+      sessionStorage.removeItem("showToast");
+      sessionStorage.removeItem("toastMessage");
+      sessionStorage.removeItem("toastType");
+    }
+  }, [show]);
+
+  useEffect(() => {
+    if (isPublished) {
+      const publishVideo = async () => {
+        try {
+          const vdo = {
+            video_url: "abcd",
+            video_category: "tech",
+            email: "ganesh93lokhande@gmail.com"
+          };
+  
+          const res = await fetch("http://127.0.0.1:5000/check_video", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(vdo)
+          });
+  
+          const result = await res.json();
+
+          sessionStorage.setItem("showToast", "true");
+          sessionStorage.setItem("toastMessage", result.strike ? "Your video has been deleted due to copyrgiht ingrigement." : "Video published successfully!");
+          sessionStorage.setItem("toastType", result.strike ? "error" : "success");
+
+          if(videoId){
+            const response = await fetch(`${backendURL}/deletevideo/${videoId}`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+            await response.json();
+          }
+          setVideoId(null);
+          setShow(true);
+        } catch (error) {
+          console.error("Error publishing video:", error);
+          sessionStorage.setItem("showToast", "true");
+          sessionStorage.setItem("toastMessage", "Something went wrong!");
+          sessionStorage.setItem("toastType", "error");
+          window.location.reload();
+        }
+      };
+  
+      publishVideo();
+    }
+  }, [isPublished]);
+
+  useEffect(() => {
     if (theme === false && window.location.href.includes("/studio")) {
       document.body.style.backgroundColor = "#F9F9F9";
     } else if (theme === true && window.location.href.includes("/studio")) {
@@ -143,7 +215,7 @@ function Studio() {
           setMyVideos(data);
         }
       } catch (error) {
-        // console.log(error.message);
+        console.log(error.message);
       }
     };
 
@@ -338,16 +410,18 @@ function Studio() {
 
   const uploadVideo = async (videoFile) => {
     try {
+      console.log("Video Uploading Started");
       const fileReference = ref(storage, `videos/${videoFile.name}`);
       const uploadTask = uploadBytesResumable(fileReference, videoFile);
       setUploadTask(uploadTask); // Store the upload task
+      console.log("Video Uploading Done");
 
       const videoElement = document.createElement("video");
       videoElement.preload = "metadata";
 
       videoElement.onloadedmetadata = async function () {
         const duration = videoElement.duration; // Duration in seconds
-        // console.log("Video duration:", duration);
+        console.log("Video duration:", duration);
         setDuration(duration);
 
         uploadTask.on(
@@ -564,7 +638,7 @@ function Studio() {
           Visibility: visibility,
           category: category
         };
-        // Send the POST request
+
         const response = await fetch(`${backendURL}/publish`, {
           method: "POST",
           credentials: "include",
@@ -576,11 +650,13 @@ function Studio() {
 
         // Handle the response
         const Data = await response.json();
-        if (Data === "Published") {
-          setIsPublished(true);
+        if (Data.message === "Published") {
           setLoading(false);
           setIsClicked(false);
-          window.location.reload();
+          setIsVideoSelected(false);
+          setVideoId(Data.videoId);
+          setIsPublished(true);
+          // window.location.reload();
         } else {
           setLoading(true);
           setIsClicked(true);
@@ -589,7 +665,7 @@ function Studio() {
           }, 1500);
         }
       } catch (error) {
-        // console.log(error.message);
+        console.log(error.message);
       }
     }
   };
@@ -1360,7 +1436,7 @@ function Studio() {
           </div>
         </div>
       </div>
-      {isChannel === true ? <Dashboard /> : ""}
+      {isChannel === true ? <Dashboard key={videoId} /> : ""}
     </>
   );
 }

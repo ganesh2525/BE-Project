@@ -42,12 +42,24 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
+    const video_url = video.videoUR;
+    const video_thumnail = video.imageURL;
+
     await videodata.updateOne(
       { "VideoData._id": videoId },
       { $pull: { VideoData: { _id: videoId } } }
     );
 
     await TrendingData.deleteOne({ videoid: videoId });
+
+    // await userData.updateMany({
+    //   { "likedVideos.likedVideoID": videoId },
+    // })
+
+    await userData.updateMany(
+      { "likedVideos.likedVideoID": videoId },
+      { $pull: { likedVideos: { likedVideoID: videoId } } }
+    );
 
     await userData.updateMany(
       { "likedVideos.likedVideoID": videoId },
