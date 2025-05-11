@@ -42,8 +42,14 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    const video_url = video.videoUR;
-    const video_thumnail = video.imageURL;
+    const foundVideo = video.VideoData.find(v => v._id.toString() === videoId);
+    if (!foundVideo) {
+      return res.status(404).json({ message: "Video not found" });  
+    }
+    const video_url = foundVideo.videoURL;
+    const video_thumnail = foundVideo.imageURL;
+    console.log(video_url)
+    console.log(video_thumnail)
 
     await videodata.updateOne(
       { "VideoData._id": videoId },
@@ -76,8 +82,19 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
       { $pull: { "Playlists.$.playlist_videos": { videoID: videoId } } }
     );
 
+    await userData.updateMany(
+      { "thumbnails.imageURL": video_thumnail },
+      { $pull: { thumbnails: { imageURL: video_thumnail } } }
+    )
+
+    await userData.updateMany(
+      { "videos.videoURL": video_url },
+      { $pull: { videos: { videoURL: video_url } } }
+    )
+
     res.status(200).json({ message: "Video deleted successfully" });
   } catch (error) {
+    console.log("Error: ",error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

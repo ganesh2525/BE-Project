@@ -81,7 +81,7 @@ function Browse() {
 
   const Tags = [
     "All",
-    "Artificial Intelligence",
+    "Education",
     "Comedy",
     "Gaming",
     "Vlog",

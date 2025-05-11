@@ -516,7 +516,7 @@ function LeftPanel() {
               })}
           </div>
           <hr className={theme ? "seperate" : "seperate-light"} />
-          <Tooltip
+          {/* <Tooltip
             TransitionComponent={Zoom}
             title="Made with 💖 by Shubhojeet"
             placement="bottom"
@@ -534,7 +534,7 @@ function LeftPanel() {
                 Shubhojeet Bera 🚀
               </a>
             </div>
-          </Tooltip>
+          </Tooltip> */}
         </div>
       </div>
 
@@ -1342,7 +1342,7 @@ function LeftPanel() {
                 })}
             </div>
             <hr className={theme ? "seperate" : "seperate-light"} />
-            <Tooltip
+            {/* <Tooltip
               TransitionComponent={Zoom}
               title="Made with 💖 by Shubhojeet"
               placement="bottom"
@@ -1360,7 +1360,7 @@ function LeftPanel() {
                   Shubhojeet Bera 🚀
                 </a>
               </div>
-            </Tooltip>
+            </Tooltip> */}
           </div>
         </div>
       </div>

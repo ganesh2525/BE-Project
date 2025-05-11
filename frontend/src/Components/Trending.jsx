@@ -117,7 +117,7 @@ function Trending() {
     }
   };
 
-  if (trendingVideos === "NO DATA") {
+  if (trendingVideos.length === 0) {
     return (
       <>
         <Navbar />

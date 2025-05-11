@@ -57,49 +57,48 @@ function App() {
           <Route path="/home" element={<Browse />} />
           <Route
             path="/studio"
-            element={user ? <Studio /> : <Error />}
+            element={<Studio />}
           />
           <Route
             path="/studio/customize"
-            element={user ? <Customization /> : <Error />}
+            element={<Customization />}
           />
           <Route
             path="/studio/video"
-            element={user ? <Content /> : <Error />}
+            element={<Content />}
           />
           <Route
             path="/studio/comments"
-            element={user ? <Comments /> : <Error />}
+            element={<Comments />}
           />
           <Route
             path="/studio/video/edit/:id"
-            element={user ? <VideoDetails /> : <Error />}
+            element={<VideoDetails />}
           />
           <Route
             path="/studio/video/comments/:id"
-            element={user ? <VideoComments /> : <Error />}
+            element={<VideoComments />}
           />
           <Route
             path="/likedVideos"
-            element={user ? <LikeVideos /> : <Error />}
+            element={<LikeVideos />}
           />
           <Route
             path="/watchlater"
-            element={user ? <WatchLater /> : <Error />}
+            element={<WatchLater />}
           />
 
           <Route
             path="/library"
-            element={user ? <Library /> : <Error />}
+            element={<Library />}
           />
+
+          
           <Route path="/channel/:id" element={<OtherChannel />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/results/:data" element={<SearchResults />} />
           <Route path="/playlist/:id" element={<Playlists />} />
-          <Route
-            path="/subscriptions"
-            element={user ? <Subscriptions /> : <Error />}
-          />
+          <Route path="/subscriptions" element={<Subscriptions />}/>
           <Route path="/video/:id" element={<VideoSection />} />
           <Route path="/*" element={<Error />} />
         </Routes>
