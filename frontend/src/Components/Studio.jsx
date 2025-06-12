@@ -34,7 +34,7 @@ import LanguageIcon from "@mui/icons-material/Language";
 
 function Studio() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [isChannel, setisChannel] = useState();
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
@@ -159,7 +159,7 @@ function Studio() {
 
           console.log(vdo);
 
-          const res = await fetch("http://127.0.0.1:5000/get-similarity", {
+          const res = await fetch(`${import.meta.env.VITE_VIDEO_PROCESSOR_URL}/get-similarity`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -173,16 +173,16 @@ function Studio() {
           sessionStorage.setItem("toastMessage", result.strike ? "Unauthorized use of copyrighted content has been identified. This action may violate intellectual property rights and legal policies associated with the original work." : "Video published successfully!");
           sessionStorage.setItem("toastType", result.strike ? "error" : "success");
 
-          // if(videoId){
-          //   const response = await fetch(`${backendURL}/deletevideo/${videoId}`, {
-          //     method: "POST",
-          //     credentials: "include",
-          //     headers: {
-          //       "Content-Type": "application/json",
-          //     },
-          //   });
-          //   await response.json();
-          // }
+          if(result.strike){
+            const response = await fetch(`${backendURL}/deletevideo/${videoId}`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+            await response.json();
+          }
           setVideoId(null);
           setShow(true);
         } catch (error) {
@@ -387,13 +387,14 @@ function Studio() {
   
       const formData = new FormData();
       formData.append("file", selectedImage);
-      formData.append("upload_preset", "ml_default"); // replace with your preset
-      formData.append("cloud_name", "dp3f23esu"); // Replace with your cloud name
+      formData.append("upload_preset", import.meta.env.VITE_CLOUD_PRESET); // replace with your preset
+      formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME); // Replace with your cloud name
       formData.append("folder", "profile"); // Store in 'profile' folder
   
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://api.cloudinary.com/v1_1/dp3f23esu/image/upload");
+        const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/image/upload`;
+        xhr.open("POST", url);
   
         // Optional: progress tracking
         xhr.upload.onprogress = (event) => {
@@ -517,13 +518,14 @@ function Studio() {
         // Prepare form data for Cloudinary upload
         const formData = new FormData();
         formData.append("file", videoFile);
-        formData.append("upload_preset", "ml_default"); // replace with your preset
-        formData.append("cloud_name", "dp3f23esu"); // replace with your cloud name
+        formData.append("upload_preset", import.meta.env.VITE_CLOUD_PRESET); // replace with your preset
+        formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME); // replace with your cloud name
         formData.append("folder", "videos");
   
         // Use XMLHttpRequest for upload progress tracking
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://api.cloudinary.com/v1_1/dp3f23esu/video/upload");
+        const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/video/upload`;
+        xhr.open("POST", url);
   
         // Update progress bar
         xhr.upload.onprogress = (event) => {
@@ -732,13 +734,14 @@ function Studio() {
   
       const formData = new FormData();
       formData.append("file", selectedThumbnail);
-      formData.append("upload_preset", "ml_default"); 
-        formData.append("cloud_name", "dp3f23esu");
+      formData.append("upload_preset", import.meta.env.VITE_CLOUD_PRESET); 
+      formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
       formData.append("folder", "thumbnails");
   
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://api.cloudinary.com/v1_1/dp3f23esu/image/upload");
+        const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/image/upload`;
+        xhr.open("POST", url);
   
         // Optional: track progress
         xhr.upload.onprogress = (event) => {
@@ -1334,18 +1337,26 @@ function Studio() {
                   />
 
                     <FormControl  fullWidth>
-                        <InputLabel>Category</InputLabel>
+                        <InputLabel
+                            sx={{
+                              color: '#808080',
+                              paddingTop: '10px',
+                              fontSize: '0.8rem',
+                              '&.Mui-focused': {
+                                color: '#3498db',       // Optional: Keep same color when focused
+                              }
+                            }}
+                        >Category</InputLabel>
                         <Select className="video-category" value={category} onChange={(e) => setCategory(e.target.value)}>
                         <MenuItem value="Music">Music</MenuItem>
-                        <MenuItem value="Gaming">Gaming</MenuItem>
                         <MenuItem value="Entertainment">Entertainment</MenuItem>
                         <MenuItem value="Education">Education</MenuItem>
                         <MenuItem value="Technology">Technology</MenuItem>
                         <MenuItem value="Vlogs">Vlogs</MenuItem>
                         <MenuItem value="Food">Food</MenuItem>
-                        <MenuItem value="Fitness & Health">Fitness & Health</MenuItem>
-                        <MenuItem value="Science & Facts">Science & Facts</MenuItem>
-                        <MenuItem value="News & Politics">News & Politics</MenuItem>
+                        <MenuItem value="Health">Health</MenuItem>
+                        <MenuItem value="Science">Science</MenuItem>
+                        <MenuItem value="News">News</MenuItem>
                         </Select>
                     </FormControl>
                 </div>

@@ -7,7 +7,6 @@ const TrendingData = require("../Models/trending");
 const cookieParser = require("cookie-parser");
 const { verifyRefreshToken, generateAccessToken } = require("../lib/tokens");
 const Videos = express.Router();
-const VideoCategory = require('../Models/category_map');
 
 Videos.use(cookieParser());
 
@@ -52,13 +51,6 @@ Videos.post("/publish", async (req, res) => {
     if (user) {
       user.videos.push({ videoURL: videoLink, videoLength: video_duration });
       user.thumbnails.push({ imageURL: thumbnailLink });
-
-      const formattedCategory = category.replace(/\s+/g, '_');
-      await VideoCategory.updateOne(
-        {},
-        { $push: { [`categories.${formattedCategory}`]: videoLink } },
-        { upsert: true }
-      );
 
       if (!videos) {
         videos = new videodata({

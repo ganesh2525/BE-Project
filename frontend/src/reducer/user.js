@@ -11,7 +11,7 @@ const initialState = {
 export const fetchUserData = createAsyncThunk(
   "user/fetchUserData",
   async () => {
-    const response = await fetch("http://localhost:3000/userdata", {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/userdata`, {
       credentials: "include",
     });
     const data = await response.json();

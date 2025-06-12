@@ -15,7 +15,7 @@ import { useSelector } from "react-redux";
 
 function Dashboard() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [myVideos, setMyVideos] = useState([]);
   const [dropDown, setDropDown] = useState(true);
   const [showSortedVideos, setShowSortedVideos] = useState(false); // State for hover effect
@@ -31,7 +31,7 @@ function Dashboard() {
     return Dark ? JSON.parse(Dark) : true;
   });
 
-  document.title = "Channel dashboard - YouTube Studio";
+  document.title = "Channel dashboard - CopyGuard Studio";
 
   const User = useSelector((state) => state.user.user);
   const { user } = User;

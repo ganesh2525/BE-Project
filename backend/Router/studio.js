@@ -1,13 +1,16 @@
 require("dotenv").config();
 require("../Database/database");
+const mongoose = require('mongoose');
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const userData = require("../Models/user");
 const videodata = require("../Models/videos");
 const TrendingData = require("../Models/trending");
+const videoSchema = require('../Models/category');
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const { verifyRefreshToken, generateAccessToken } = require("../lib/tokens");
+const { deleteVideoByUrl, deleteImageByUrl } = require('../utils/cloudinary');
 const Studio = express.Router();
 
 Studio.use(cookieParser());
@@ -18,13 +21,13 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
 
     const refreshToken = req.cookies?.refreshToken;
     const accessToken = req.cookies?.accessToken;
+
     if (!refreshToken) {
       return res.status(401).json({
         message: "Unauthorized access, please login again",
       });
     }
     if (!accessToken) {
-      //Refresh the access token
       const userID = verifyRefreshToken(refreshToken);
       const userData = { id: userID };
       const accessToken = generateAccessToken(userData);
@@ -38,6 +41,7 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
 
     const video = await videodata.findOne({ "VideoData._id": videoId });
 
+
     if (!video) {
       return res.status(404).json({ error: "Video not found" });
     }
@@ -46,26 +50,26 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
     if (!foundVideo) {
       return res.status(404).json({ message: "Video not found" });  
     }
+
     const video_url = foundVideo.videoURL;
-    const video_thumnail = foundVideo.imageURL;
+    const video_thumnail = foundVideo.thumbnailURL;
+    const video_category =  foundVideo.videoCategory;
+
     console.log(video_url)
     console.log(video_thumnail)
+    console.log(video_category)
 
     await videodata.updateOne(
       { "VideoData._id": videoId },
       { $pull: { VideoData: { _id: videoId } } }
     );
 
-    await TrendingData.deleteOne({ videoid: videoId });
-
-    // await userData.updateMany({
-    //   { "likedVideos.likedVideoID": videoId },
-    // })
-
     await userData.updateMany(
-      { "likedVideos.likedVideoID": videoId },
-      { $pull: { likedVideos: { likedVideoID: videoId } } }
-    );
+      { "videos.videoURL": video_url },
+      { $pull: { videos: { videoURL: video_url } } }
+    )
+
+    await TrendingData.deleteOne({ videoid: videoId });
 
     await userData.updateMany(
       { "likedVideos.likedVideoID": videoId },
@@ -87,12 +91,16 @@ Studio.post("/deletevideo/:videoId", async (req, res) => {
       { $pull: { thumbnails: { imageURL: video_thumnail } } }
     )
 
-    await userData.updateMany(
-      { "videos.videoURL": video_url },
-      { $pull: { videos: { videoURL: video_url } } }
-    )
+    const DynamicModel = mongoose.model(video_category, videoSchema, video_category);
+    
+    await DynamicModel.findOneAndDelete({ video_url });
+
+    await deleteVideoByUrl(video_url);
+    
+    await deleteImageByUrl(video_thumnail);
 
     res.status(200).json({ message: "Video deleted successfully" });
+
   } catch (error) {
     console.log("Error: ",error);
     res.status(500).json({ error: "Internal server error" });

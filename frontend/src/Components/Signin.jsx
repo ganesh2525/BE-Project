@@ -6,7 +6,7 @@ import Reset from "./Reset";
 
 function Signin(prop) {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000"
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [data, setData] = useState({});
   const [showReset, setShowReset] = useState(false);
   const [theme, setTheme] = useState(() => {

@@ -12,12 +12,23 @@ from scipy.signal import convolve
 import smtplib
 from email.mime.text import MIMEText
 from flask_cors import CORS
+from tqdm import tqdm
+from dotenv import load_dotenv
+import subprocess
+import uuid
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-client = MongoClient("mongodb+srv://ganesh_93:ganesh93@mern.kq359yn.mongodb.net")  # change URI if needed
-db = client["YouTube"]
+total_steps = 5
+progress_bar = tqdm(total=total_steps, desc="Processing", unit="step")
+
+mongo_uri = os.getenv("MONGO_URI")
+mongo_db = os.getenv("MONGO_DB")
+
+client = MongoClient(mongo_uri)  # change URI if needed
+db = client[mongo_db]
 
 # --- Fingerprinting Algorithm Functions (from your code) ---
 
@@ -28,6 +39,10 @@ def download_video_if_needed(video_url):
         if not os.path.exists(output_path):
             gdown.download(f"https://drive.google.com/uc?id={file_id}", output_path, quiet=False)
         return output_path
+    
+    # unique_id = uuid.uuid4().hex
+    # output_path2 = f"temp_{unique_id}.mp4"
+    # subprocess.run(["ffmpeg", "-i", video_url, "-c", "copy", output_path2], check=True)
     return video_url
 
 def preprocess_video(video_path, target_width, target_height, target_fps):
@@ -97,22 +112,18 @@ def compute_video_hash(video_path, config):
         hashes.append(generate_hash(features))
     return hashes
 
-def compare_hashes(hash1, hash2):
-    return np.sum(hash1 != hash2) / len(hash1)
+# def compare_hashes(hash1, hash2):
+#     return np.sum(hash1 != hash2) / len(hash1)
 
-# def send_email_notification(to_email, video_url):
-#     msg = MIMEText(f"Your video is similar to one in our database: {video_url}")
-#     msg["Subject"] = "Video Similarity Detected"
-#     msg["From"] = "ganesh3567lokhande@gmail.com"
-#     msg["To"] = to_email
-
-#     # Gmail SMTP
-#     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-#         server.login("ganesh3567lokhande@gmail.com", "vjdy wmsi usaa hyql")
-#         server.send_message(msg)
-
-import smtplib
-from email.mime.text import MIMEText
+def compare_hashes(h1, h2):
+    len_diff = abs(len(h1) - len(h2))
+    if len(h1) < len(h2):
+        pad_val = int(np.median(h1))
+        h1 = np.pad(h1, (0, len_diff), constant_values=pad_val)
+    elif len(h2) < len(h1):
+        pad_val = int(np.median(h2))
+        h2 = np.pad(h2, (0, len_diff), constant_values=pad_val)
+    return np.sum(h1 != h2) / len(h1)
 
 def send_email_notification(to_email, video_url):
     body = f"""
@@ -130,13 +141,70 @@ Copyright Protection Team
 
     msg = MIMEText(body)
     msg["Subject"] = "Copyright Infringement Detected"
-    msg["From"] = "ganesh3567lokhande@gmail.com"
+    msg["From"] = os.getenv("EMAIL_USER")
     msg["To"] = to_email
 
     # Gmail SMTP
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login("ganesh3567lokhande@gmail.com", "vjdy wmsi usaa hyql")
+        server.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
         server.send_message(msg)
+
+# Optional: Try another algorithm if strike is False
+# def alternate_compare(video_path1, video_path2):
+#     # Basic frame difference comparator for fallback
+#     cap1 = cv2.VideoCapture(video_path1)
+#     cap2 = cv2.VideoCapture(video_path2)
+
+#     match_count = 0
+#     total = 0
+#     while True:
+#         ret1, frame1 = cap1.read()
+#         ret2, frame2 = cap2.read()
+#         if not ret1 or not ret2:
+#             break
+#         gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+#         gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+#         diff = cv2.absdiff(gray1, gray2)
+#         score = np.mean(diff)
+#         if score < 30:  # threshold
+#             match_count += 1
+#         total += 1
+
+#     cap1.release()
+#     cap2.release()
+
+#     return match_count / total if total > 0 else 1.0
+
+def alternate_compare(video_path1, video_path2, config):
+    cap1 = cv2.VideoCapture(video_path1)
+    cap2 = cv2.VideoCapture(video_path2)
+
+    match_count = 0
+    total = 0
+    while True:
+        ret1, frame1 = cap1.read()
+        ret2, frame2 = cap2.read()
+        if not ret1 or not ret2:
+            break
+
+        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+
+        # Resize both to a common size
+        target_size = (config['width'], config['height'])
+        gray1 = cv2.resize(gray1, target_size)
+        gray2 = cv2.resize(gray2, target_size)
+
+        diff = cv2.absdiff(gray1, gray2)
+        score = np.mean(diff)
+        if score < 30:
+            match_count += 1
+        total += 1
+
+    cap1.release()
+    cap2.release()
+
+    return match_count / total if total > 0 else 1.0
 
 # --- Main API Endpoint ---
 
@@ -151,6 +219,9 @@ def get_similarity():
         video_url = data["video_url"]
         email = data["email"]
         category = data["video_category"]
+        print("video_url: ",video_url)
+        print("email: ",email)
+        print("video_category: ",category)
 
         config = {
             'width': 176,
@@ -167,12 +238,14 @@ def get_similarity():
         # Step 1: Download video
         local_path = download_video_if_needed(video_url)
         step += 1
-        print(f"Downloading video: {progress_tracker(step, total_steps)}%")
+        print(f"Downloading video, Progress: {progress_tracker(step, total_steps)}%")
+        # progress_bar.update(1)
 
         # Step 2: Preprocess
         frames = preprocess_video(local_path, config['width'], config['height'], config['fps'])
         step += 1
-        print(f"Preprocessing video: {progress_tracker(step, total_steps)}%")
+        print(f"Preprocessing video, Progress: {progress_tracker(step, total_steps)}%")
+        # progress_bar.update(1)
 
         # Step 3: Segment & hash
         segments = segment_video(frames, config['segment_length'])
@@ -182,12 +255,30 @@ def get_similarity():
             features = extract_features(tiri, config['block_size'])
             hashes.append(generate_hash(features))
         step += 1
-        print(f"Segmenting and hashing: {progress_tracker(step, total_steps)}%")
+        print(f"Segmenting and hashing, Progress: {progress_tracker(step, total_steps)}%")
+        # progress_bar.update(1)
 
         # Step 4: Compare with DB
+        # collection = db[category]
+        # documents = list(collection.find())
+        # for doc in documents:
+        #     stored_hashes = doc["hash"]
+        #     for h1 in hashes:
+        #         for h2 in stored_hashes:
+        #             h2 = np.array(h2)
+        #             if compare_hashes(h1, h2) < 0.24:
+        #                 step += 1
+        #                 print(f"Comparing with database: {progress_tracker(step, total_steps)}%")
+        #                 send_email_notification(doc["email"], video_url)
+        #                 return jsonify({
+        #                     "strike": True,
+        #                 })
+
         collection = db[category]
         documents = list(collection.find())
         for doc in documents:
+            if doc.get("email") == email:
+                continue
             stored_hashes = doc["hash"]
             for h1 in hashes:
                 for h2 in stored_hashes:
@@ -196,25 +287,66 @@ def get_similarity():
                         step += 1
                         print(f"Comparing with database: {progress_tracker(step, total_steps)}%")
                         send_email_notification(doc["email"], video_url)
+                        print("strike : True")
                         return jsonify({
                             "strike": True,
+                            "method": "first"
                         })
+        # progress_bar.update(1)    
 
         # Step 5: Store new
+        # collection.insert_one({
+        #     "video_url": video_url,
+        #     "email": email,
+        #     "hash": [h.tolist() for h in hashes]
+        # })
+        # step += 1
+        # print(f"Storing new video: {progress_tracker(step, total_steps)}%")
+
+        # return jsonify({
+        #     "strike": False,
+        # })
+
+        # Step 5: If no match found with primary algo, fallback comparison
+        for doc in documents:
+            if doc.get("email") == email:
+                continue
+            other_video_path = download_video_if_needed(doc["video_url"])
+            sim_score = alternate_compare(local_path, other_video_path, config)
+            if other_video_path.startswith("temp_") and os.path.exists(other_video_path):
+                os.remove(other_video_path)
+            if sim_score > 0.7:  # You decide threshold
+                send_email_notification(doc["email"], video_url)
+                print("strike : True")
+                return jsonify({
+                    "strike": True,
+                    "method": "second"
+                })
+        # progress_bar.update(1)
+
+        # Store new
         collection.insert_one({
             "video_url": video_url,
             "email": email,
             "hash": [h.tolist() for h in hashes]
         })
         step += 1
-        print(f"Storing new video: {progress_tracker(step, total_steps)}%")
+        print(f"Storing new video, Progress: {progress_tracker(step, total_steps)}%")
+        progress_bar.update(1)
 
+        print("strike : False")
         return jsonify({
             "strike": False,
+            "method": "none"
         })
 
     except Exception as e:
+        print("Error occurred:", str(e))
         return jsonify({"error": str(e)})
+    
+    finally:
+        if local_path and local_path.startswith("temp_") and os.path.exists(local_path):
+            os.remove(local_path)
 
 if __name__ == "__main__":
     app.run(debug=True)

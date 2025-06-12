@@ -21,7 +21,7 @@ import { MdOutlineAutoFixHigh } from "react-icons/md";
 
 function LeftPanel2() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [profileIMG, setProfileIMG] = useState();
   const [channel, setChannel] = useState("");
   const [channelId, setChannelId] = useState();
