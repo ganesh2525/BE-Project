@@ -21,13 +21,13 @@ import { GrUndo } from "react-icons/gr";
 
 function VideoDetails() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const { id } = useParams();
   const [videodata, setVideoData] = useState();
   const [previewTitle, setPreviewTitle] = useState("");
   const [previewDescription, setPreviewDescription] = useState("");
   const [previewTags, setPreviewTags] = useState("");
-  const videolink = "http://localhost:5173/video";
+  const videolink = `${import.meta.env.VITE_FRONTEND_URL}/video`;
   const [thumbnailImage, setThumbnailImage] = useState(null);
   const [thumbnailSelected, setThumbnailSelected] = useState(false);
   const [finalThumbnail, setFinalThumbnail] = useState(null);

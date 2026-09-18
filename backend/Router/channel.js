@@ -168,7 +168,7 @@ Channel.post("/savechannel", async (req, res) => {
           ],
         },
       },
-      { new: true } // Return the updated document
+      { new: true }
     );
 
     if (!user) {

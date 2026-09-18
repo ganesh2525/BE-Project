@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   backend:
-    image: shubhobera09/youtube-backend
+    image: username/youtube-backend
     ports:
       - "3000:3000"
     environment:
@@ -13,6 +13,6 @@ services:
       PASSWORD: google_app_password
 
   frontend:
-    image: shubhobera09/youtube-frontend
+    image: username/youtube-frontend
     ports:
       - "4000:4000"

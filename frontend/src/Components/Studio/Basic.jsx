@@ -12,11 +12,11 @@ import { useSelector } from "react-redux";
 
 function Basic() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [channelName, setChannelName] = useState();
   const [channelDescription, setChannelDescription] = useState();
   const [channelID, setChannelID] = useState("");
-  const channelUrl = "http://localhost:5173/channel";
+  const channelUrl = `${import.meta.env.VITE_FRONTEND_URL}/channel`;
   const channelIDInputRef = useRef(null);
   const [Basicchanges, setBasicChanges] = useState(false);
   const [Linkchanges, setLinkChanges] = useState(false);

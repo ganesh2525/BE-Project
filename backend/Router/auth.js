@@ -57,18 +57,18 @@ auth.post("/signup", async (req, res) => {
     });
 
     const mailOptions = {
-      from: "admin@shubho.youtube.app",
+      from: "admin@gmail.com",
       to: email,
-      subject: "Welcome to Shubho's YouTube Clone!",
+      subject: "Welcome to CopyGuard!",
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
-          <h1 style="color: #333;">Welcome to Shubho's YouTube Clone!</h1>
+          <h1 style="color: #333;">Welcome to CopyGuard!</h1>
           <p style="color: #555;">Hello ${name},</p>
           <p style="color: #555;">We are excited to have you as a new member of our community! Thank you for joining.</p>
           <p style="color: #555;">Feel free to explore our platform and start sharing your videos with the world.</p>
           <p style="color: #555;">If you have any questions or need assistance, don't hesitate to reach out to us.</p>
           <p style="color: #555;">Best regards,</p>
-          <p style="color: #555;">Shubhojeet Bera</p>
+          <p style="color: #555;">CopyGuard Team</p>
         </div>
       `,
     };
@@ -205,7 +205,7 @@ auth.post("/resetlink", async (req, res) => {
     });
 
     const mailOptions = {
-      from: "admin@shubho.youtube.app",
+      from: "admin@copyright.in",
       to: email,
       subject: "Password Reset Link",
       html: `
@@ -218,7 +218,7 @@ auth.post("/resetlink", async (req, res) => {
           </p>
           <p style="color: #555;">This link is only valid for 30 minutes.</p>
           <p style="color: #555;">If you didn't request a password reset, please ignore this email.</p>
-          <p style="color: #888;">Best regards,<br/>Shubhojeet Bera</p>
+          <p style="color: #888;">Best regards,<br/>CopyGuard Team</p>
         </div>
       `,
     };
@@ -226,9 +226,9 @@ auth.post("/resetlink", async (req, res) => {
     // Send the email
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error(error);
+        console.error("Error sending email:", error);
         return res.status(400).json({
-          message: "Error sending email",
+          message: `Error sending email: ${error.message}`,
         });
       } else {
         console.log("Email sent: " + info.response);

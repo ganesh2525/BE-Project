@@ -12,7 +12,7 @@ import { useSelector } from "react-redux";
 
 function Browse() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [thumbnails, setThumbnails] = useState([]);
   const [Titles, setTitles] = useState();
   const [uploader, setUploader] = useState();
@@ -81,9 +81,10 @@ function Browse() {
 
   const Tags = [
     "All",
-    "Artificial Intelligence",
-    "Comedy",
+    "Education",
+    "Entertainment",
     "Gaming",
+    "Sports",
     "Vlog",
     "Beauty",
     "Travel",

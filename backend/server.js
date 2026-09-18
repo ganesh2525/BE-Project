@@ -2,7 +2,7 @@ const express = require("express");
 const router = require("./Router/router");
 const app = express();
 const path = require("path");
-const port = 3000;
+const port = process.env.PORT || 3000;
 const bodyParser = require("body-parser");
 
 // Serve static files from the "public" directory

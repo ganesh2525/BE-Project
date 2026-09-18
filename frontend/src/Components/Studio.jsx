@@ -17,6 +17,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Zoom from "@mui/material/Zoom";
 import ArrowDropDownRoundedIcon from "@mui/icons-material/ArrowDropDownRounded";
 import VideoCallOutlinedIcon from "@mui/icons-material/VideoCallOutlined";
+import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import Dashboard from "./Studio/Dashboard";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -33,7 +34,7 @@ import LanguageIcon from "@mui/icons-material/Language";
 
 function Studio() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [isChannel, setisChannel] = useState();
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
@@ -64,6 +65,10 @@ function Studio() {
   const [isVisibilityClicked, setisVisibilityClicked] = useState(false);
   const [myVideos, setMyVideos] = useState([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [category, setCategory] = useState("");
+  const [videoId, setVideoId] = useState(null);
+  const [show, setShow] = useState(false);
+
   const [theme, setTheme] = useState(() => {
     const Dark = localStorage.getItem("Dark");
     return Dark ? JSON.parse(Dark) : true;
@@ -123,6 +128,77 @@ function Studio() {
   //USE EFFECTS
 
   useEffect(() => {
+    if (sessionStorage.getItem("showToast") === "true") {
+      const message = sessionStorage.getItem("toastMessage");
+      const type = sessionStorage.getItem("toastType");
+  
+      if (message && type) {
+        if (type === "error") {
+          toast.error(message, { position: "top-center", style: { marginTop: "50px" } });
+        } else {
+          toast.success(message, { position: "top-center", style: { marginTop: "50px" } });
+        }
+      }
+  
+      // Remove the stored values after displaying the toast
+      sessionStorage.removeItem("showToast");
+      sessionStorage.removeItem("toastMessage");
+      sessionStorage.removeItem("toastType");
+    }
+  }, [show]);
+
+  useEffect(() => {
+    if (isPublished) {
+      const publishVideo = async () => {
+        try {
+          const vdo = {
+            video_url: VideoURL,
+            video_category: category,
+            email: user?.email
+          };
+
+          console.log(vdo);
+
+          const res = await fetch(`${import.meta.env.VITE_VIDEO_PROCESSOR_URL}/get-similarity`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(vdo)
+          });
+  
+          const result = await res.json();
+
+          sessionStorage.setItem("showToast", "true");
+          sessionStorage.setItem("toastMessage", result.strike ? "Unauthorized use of copyrighted content has been identified. This action may violate intellectual property rights and legal policies associated with the original work." : "Video published successfully!");
+          sessionStorage.setItem("toastType", result.strike ? "error" : "success");
+
+          if(result.strike){
+            const response = await fetch(`${backendURL}/deletevideo/${videoId}`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+            await response.json();
+          }
+          setVideoId(null);
+          setShow(true);
+        } catch (error) {
+          console.error("Error publishing video:", error);
+          // sessionStorage.setItem("showToast", "true");
+          // sessionStorage.setItem("toastMessage", "Something went wrong!");
+          // sessionStorage.setItem("toastType", "error");
+          window.location.reload();
+        }
+      };
+  
+      publishVideo();
+    }
+  }, [isPublished]);
+
+  useEffect(() => {
     if (theme === false && window.location.href.includes("/studio")) {
       document.body.style.backgroundColor = "#F9F9F9";
     } else if (theme === true && window.location.href.includes("/studio")) {
@@ -141,7 +217,7 @@ function Studio() {
           setMyVideos(data);
         }
       } catch (error) {
-        // console.log(error.message);
+        console.log(error.message);
       }
     };
 
@@ -271,39 +347,86 @@ function Studio() {
     setwebsitelink(e.target.value);
   };
 
+  // const uploadPic = async () => {
+  //   try {
+  //     if (!selectedImage) {
+  //       return null;
+  //     }
+
+  //     const fileReference = ref(storage, `profile/${selectedImage.name}`);
+  //     const uploadData = uploadBytesResumable(fileReference, selectedImage);
+
+  //     return new Promise((resolve, reject) => {
+  //       uploadData.on(
+  //         "state_changed",
+  //         null,
+  //         (error) => {
+  //           console.log(error);
+  //           reject(error);
+  //         },
+  //         async () => {
+  //           try {
+  //             const downloadURL = await getDownloadURL(uploadData.snapshot.ref);
+  //             resolve(downloadURL);
+  //           } catch (error) {
+  //             console.log(error);
+  //             reject(error);
+  //           }
+  //         }
+  //       );
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw error;
+  //   }
+  // };
+
   const uploadPic = async () => {
     try {
-      if (!selectedImage) {
-        return null;
-      }
-
-      const fileReference = ref(storage, `profile/${selectedImage.name}`);
-      const uploadData = uploadBytesResumable(fileReference, selectedImage);
-
+      if (!selectedImage) return null;
+  
+      const formData = new FormData();
+      formData.append("file", selectedImage);
+      formData.append("upload_preset", import.meta.env.VITE_CLOUD_PRESET); // replace with your preset
+      formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME); // Replace with your cloud name
+      formData.append("folder", "profile"); // Store in 'profile' folder
+  
       return new Promise((resolve, reject) => {
-        uploadData.on(
-          "state_changed",
-          null,
-          (error) => {
-            console.log(error);
-            reject(error);
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadData.snapshot.ref);
-              resolve(downloadURL);
-            } catch (error) {
-              console.log(error);
-              reject(error);
-            }
+        const xhr = new XMLHttpRequest();
+        const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/image/upload`;
+        xhr.open("POST", url);
+  
+        // Optional: progress tracking
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            console.log("Profile picture upload progress:", progress);
           }
-        );
+        };
+  
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response.secure_url); // Cloudinary image URL
+          } else {
+            console.error("Upload failed:", xhr.responseText);
+            reject(xhr.responseText);
+          }
+        };
+  
+        xhr.onerror = () => {
+          console.error("Error during upload");
+          reject("Upload error");
+        };
+  
+        xhr.send(formData);
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       throw error;
     }
   };
+  
 
   // UPLOAD VIDEO
 
@@ -334,58 +457,161 @@ function Studio() {
     setVideoDescription("");
   };
 
+  // const uploadVideo = async (videoFile) => {
+  //   try {
+  //     const fileReference = ref(storage, `videos/${videoFile.name}`);
+  //     const uploadTask = uploadBytesResumable(fileReference, videoFile);
+  //     setUploadTask(uploadTask); // Store the upload task
+
+  //     const videoElement = document.createElement("video");
+  //     videoElement.preload = "metadata";
+
+  //     videoElement.onloadedmetadata = async function () {
+  //       const duration = videoElement.duration; // Duration in seconds
+  //       console.log("Video duration:", duration);
+  //       setDuration(duration);
+
+  //       uploadTask.on(
+  //         "state_changed",
+  //         (snapshot) => {
+  //           // Handle upload progress if needed
+  //           let progress =
+  //             (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+  //           progress = Math.round(progress);
+  //           setProgress(progress);
+  //         },
+  //         (error) => {
+  //           // Handle error during upload
+  //           console.log(error);
+  //         },
+  //         async () => {
+  //           // Handle successful upload
+  //           try {
+  //             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+  //             // console.log("Video download URL:", downloadURL);
+  //             setVideoURL(downloadURL);
+  //             // Do something with the download URL, e.g., save it to the database
+  //           } catch (error) {
+  //             console.log(error);
+  //           }
+  //         }
+  //       );
+  //     };
+
+  //     videoElement.src = URL.createObjectURL(videoFile);
+  //   } catch (error) {
+  //     // console.log(error);
+  //   }
+  // };
+
   const uploadVideo = async (videoFile) => {
     try {
-      const fileReference = ref(storage, `videos/${videoFile.name}`);
-      const uploadTask = uploadBytesResumable(fileReference, videoFile);
-      setUploadTask(uploadTask); // Store the upload task
-
+      // Create a video element to extract metadata
       const videoElement = document.createElement("video");
       videoElement.preload = "metadata";
-
-      videoElement.onloadedmetadata = async function () {
-        const duration = videoElement.duration; // Duration in seconds
-        // console.log("Video duration:", duration);
+  
+      videoElement.onloadedmetadata = () => {
+        const duration = videoElement.duration;
+        console.log("Video duration:", duration);
         setDuration(duration);
-
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            // Handle upload progress if needed
-            let progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            progress = Math.round(progress);
+  
+        // Prepare form data for Cloudinary upload
+        const formData = new FormData();
+        formData.append("file", videoFile);
+        formData.append("upload_preset", import.meta.env.VITE_CLOUD_PRESET); // replace with your preset
+        formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME); // replace with your cloud name
+        formData.append("folder", "videos");
+  
+        // Use XMLHttpRequest for upload progress tracking
+        const xhr = new XMLHttpRequest();
+        const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/video/upload`;
+        xhr.open("POST", url);
+  
+        // Update progress bar
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            console.log("Upload Progress:", progress);
             setProgress(progress);
-          },
-          (error) => {
-            // Handle error during upload
-            console.log(error);
-          },
-          async () => {
-            // Handle successful upload
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              // console.log("Video download URL:", downloadURL);
-              setVideoURL(downloadURL);
-              // Do something with the download URL, e.g., save it to the database
-            } catch (error) {
-              console.log(error);
-            }
           }
-        );
+        };
+  
+        // Handle the response
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            console.log("Cloudinary URL:", response.secure_url);
+            setVideoURL(response.secure_url);
+          } else {
+            console.error("Cloudinary upload failed:", xhr.responseText);
+          }
+        };
+  
+        xhr.onerror = () => {
+          console.error("Error during the upload");
+        };
+  
+        // Send the request
+        xhr.send(formData);
       };
-
+  
+      // Trigger metadata loading
       videoElement.src = URL.createObjectURL(videoFile);
     } catch (error) {
-      // console.log(error);
+      console.error("Unexpected error:", error);
     }
   };
+
+  // const uploadVideo = async (videoFile) => {
+  //   try {
+  //     // Get duration
+  //     const videoElement = document.createElement("video");
+  //     videoElement.preload = "metadata";
+  
+  //     videoElement.onloadedmetadata = async () => {
+  //       const duration = videoElement.duration;
+  //       console.log("Video duration:", duration);
+  //       setDuration(duration);
+  
+  //       // Prepare form data for Cloudinary
+  //       const formData = new FormData();
+  //       formData.append("file", videoFile);
+  //       formData.append("upload_preset", "ml_default"); // replace with your preset
+  //       formData.append("cloud_name", "dp3f23esu"); // replace with your cloud name
+  //       setUploadTask(formData);
+  
+  //       try {
+  //         const response = await fetch(
+  //           "https://api.cloudinary.com/v1_1/dp3f23esu/video/upload",
+  //           {
+  //             method: "POST",
+  //             body: formData,
+  //           }
+  //         );
+  
+  //         const data = await response.json();
+  //         if (response.ok) {
+  //           console.log("Cloudinary URL:", data.secure_url);
+  //           setVideoURL(data.secure_url);
+  //         } else {
+  //           console.error("Cloudinary upload failed:", data);
+  //         }
+  //       } catch (error) {
+  //         console.error("Upload error:", error);
+  //       }
+  //     };
+  
+  //     videoElement.src = URL.createObjectURL(videoFile);
+  //   } catch (error) {
+  //     console.error("Unexpected error:", error);
+  //   }
+  // };
 
   //CANCEL VIDEO UPLOAD
 
   const cancelVideoUpload = () => {
     if (uploadTask) {
-      uploadTask.cancel();
+      // uploadTask.cancel();
       setIsVideoSelected(false);
       setVideoName("Upload videos");
       setProgress(0);
@@ -504,37 +730,83 @@ function Studio() {
 
   const uploadThumbnail = async () => {
     try {
-      if (isThumbnailSelected === false) {
-        return null;
-      }
-
-      const fileReference = ref(storage, `thumbnail/${selectedThumbnail.name}`);
-      const uploadData = uploadBytesResumable(fileReference, selectedThumbnail);
-
+      if (!isThumbnailSelected) return null;
+  
+      const formData = new FormData();
+      formData.append("file", selectedThumbnail);
+      formData.append("upload_preset", import.meta.env.VITE_CLOUD_PRESET); 
+      formData.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
+      formData.append("folder", "thumbnails");
+  
       return new Promise((resolve, reject) => {
-        uploadData.on(
-          "state_changed",
-          null,
-          (error) => {
-            console.log(error);
-            reject(error);
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadData.snapshot.ref);
-              resolve(downloadURL);
-            } catch (error) {
-              console.log(error);
-              reject(error);
-            }
+        const xhr = new XMLHttpRequest();
+        const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/image/upload`;
+        xhr.open("POST", url);
+  
+        // Optional: track progress
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            console.log("Thumbnail upload progress:", progress);
           }
-        );
+        };
+  
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response.secure_url); // Return the Cloudinary URL
+          } else {
+            console.error("Thumbnail upload failed:", xhr.responseText);
+            reject(xhr.responseText);
+          }
+        };
+  
+        xhr.onerror = () => {
+          console.error("Error during thumbnail upload");
+          reject("Upload error");
+        };
+  
+        xhr.send(formData);
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       throw error;
     }
   };
+
+  // const uploadThumbnail = async () => {
+  //   try {
+  //     if (isThumbnailSelected === false) {
+  //       return null;
+  //     }
+
+  //     const fileReference = ref(storage, `thumbnail/${selectedThumbnail.name}`);
+  //     const uploadData = uploadBytesResumable(fileReference, selectedThumbnail);
+
+  //     return new Promise((resolve, reject) => {
+  //       uploadData.on(
+  //         "state_changed",
+  //         null,
+  //         (error) => {
+  //           console.log(error);
+  //           reject(error);
+  //         },
+  //         async () => {
+  //           try {
+  //             const downloadURL = await getDownloadURL(uploadData.snapshot.ref);
+  //             resolve(downloadURL);
+  //           } catch (error) {
+  //             console.log(error);
+  //             reject(error);
+  //           }
+  //         }
+  //       );
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw error;
+  //   }
+  // };
 
   //SAVE UPLOAD DATA TO DATABASE
 
@@ -560,8 +832,9 @@ function Studio() {
           video_duration: duration,
           publishDate: currentDate,
           Visibility: visibility,
+          category: category
         };
-        // Send the POST request
+
         const response = await fetch(`${backendURL}/publish`, {
           method: "POST",
           credentials: "include",
@@ -573,11 +846,13 @@ function Studio() {
 
         // Handle the response
         const Data = await response.json();
-        if (Data === "Published") {
-          setIsPublished(true);
+        if (Data.message === "Published") {
           setLoading(false);
           setIsClicked(false);
-          window.location.reload();
+          setIsVideoSelected(false);
+          setVideoId(Data.videoId);
+          setIsPublished(true);
+          // window.location.reload();
         } else {
           setLoading(true);
           setIsClicked(true);
@@ -586,7 +861,7 @@ function Studio() {
           }, 1500);
         }
       } catch (error) {
-        // console.log(error.message);
+        console.log(error.message);
       }
     }
   };
@@ -1060,6 +1335,30 @@ function Studio() {
                     placeholder="Tags"
                     onChange={(e) => setVideoTags(e.target.value)}
                   />
+
+                    <FormControl  fullWidth>
+                        <InputLabel
+                            sx={{
+                              color: '#808080',
+                              paddingTop: '10px',
+                              fontSize: '0.8rem',
+                              '&.Mui-focused': {
+                                color: '#3498db',       // Optional: Keep same color when focused
+                              }
+                            }}
+                        >Category</InputLabel>
+                        <Select className="video-category" value={category} onChange={(e) => setCategory(e.target.value)}>
+                        <MenuItem value="Music">Music</MenuItem>
+                        <MenuItem value="Entertainment">Entertainment</MenuItem>
+                        <MenuItem value="Education">Education</MenuItem>
+                        <MenuItem value="Technology">Technology</MenuItem>
+                        <MenuItem value="Vlogs">Vlogs</MenuItem>
+                        <MenuItem value="Food">Food</MenuItem>
+                        <MenuItem value="Health">Health</MenuItem>
+                        <MenuItem value="Science">Science</MenuItem>
+                        <MenuItem value="News">News</MenuItem>
+                        </Select>
+                    </FormControl>
                 </div>
               </form>
               <div
@@ -1341,7 +1640,7 @@ function Studio() {
           </div>
         </div>
       </div>
-      {isChannel === true ? <Dashboard /> : ""}
+      {isChannel === true ? <Dashboard key={videoId} /> : ""}
     </>
   );
 }

@@ -22,6 +22,7 @@ Videos.post("/publish", async (req, res) => {
       email,
       publishDate,
       Visibility,
+      category
     } = req.body;
 
     const refreshToken = req.cookies?.refreshToken;
@@ -67,6 +68,7 @@ Videos.post("/publish", async (req, res) => {
               videoLength: video_duration,
               uploaded_date: publishDate,
               visibility: Visibility,
+              videoCategory: category
             },
           ],
         });
@@ -82,13 +84,20 @@ Videos.post("/publish", async (req, res) => {
           videoLength: video_duration,
           uploaded_date: publishDate,
           visibility: Visibility,
+          videoCategory: category
         });
       }
 
       await user.save();
       await videos.save();
+      const lastVideo = videos.VideoData[videos.VideoData.length - 1];
 
-      return res.status(200).json("Published");
+      return res.status(200).json({
+        message: "Published",
+        videoId: lastVideo._id
+      });
+
+      // return res.status(200).json("Published");
     } else {
       return res.status(404).json({ message: "User not found" });
     }

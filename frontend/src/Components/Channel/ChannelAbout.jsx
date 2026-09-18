@@ -13,7 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 function ChannelAbout(prop) {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000"
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const [Email, setEmail] = useState();
   const [description, setDescription] = useState();
   const [links, setLinks] = useState();

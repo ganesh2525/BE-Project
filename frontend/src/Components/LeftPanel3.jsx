@@ -12,7 +12,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { useSelector } from "react-redux";
 function LeftPanel2() {
   // const backendURL = "https://youtube-clone-mern-backend.vercel.app"
-  const backendURL = "http://localhost:3000";
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   const { id } = useParams();
   const [videodata, setVideoData] = useState();
   const VideoEditSection = localStorage.getItem("Video-Edit Section");
